@@ -1,4 +1,3 @@
-
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
 import asyncio
@@ -7,59 +6,12 @@ app = Ursina()
 
 # Player & Sky
 player = FirstPersonController()
-Sky()
-
-# Enemy Class with Health
-class Enemy(Entity):
-    def __init__(self, position=(0, 0, 5), health=100, **kwargs):
-        super().__init__(
-            model='cube',
-            color=color.red,
-            position=position,
-            scale=(1, 3, 1),  # Taller enemies
-            tag='enemy',
-            collider='box',   # Ensures hit detection
-            **kwargs
-        )
-        self.health = health
-        self.health_bar = Entity(
-            parent=self,
-            model='quad',
-            color=color.green,
-            position=(0, 1.7, 0),
-            scale=(1, 0.1, 1)
-        )
-
-    def take_damage(self, damage):
-        self.health -= damage
-        self.health_bar.scale_x = self.health / 100
-        if self.health <= 0:
-            self.explode()
-
-    def explode(self):
-        explosion = Entity(
-            model='sphere',
-            color=color.orange,
-            scale=1.5,
-            position=self.position,
-            texture='white_cube'
-        )
-        destroy(self, delay=0.1)
-        destroy(explosion, delay=0.5)
-
-# Weapon (Placeholder)
-weapon = Entity(
-    model='cube',
-    color=color.gray,
-    scale=(0.3, 0.2, 1),
-    position=(0.5, -0.3, 1),
-    parent=camera.ui
-)
+Sky()   
 
 # Blocks/World Generation
 boxes = []
-for i in range(1):
-    for j in range(1):
+for i in range(20):
+    for j in range(20):
         box = Button(
             color=color.white,
             model="cube",
@@ -70,7 +22,6 @@ for i in range(1):
         )
         boxes.append(box)
 
-# Shoot Bullet towards Mouse position
 def shoot():
     # Ensure the player is shooting in the direction of the camera's view
     direction = camera.forward  # This uses the camera's forward direction (relative to player)
@@ -101,39 +52,49 @@ def shoot():
 
     bullet.update = update_bullet
 
-# Input function to detect keypress
+selected_block = "grass"            
+
 def input(key):
-    if key == "e":  # When 'E' is pressed, shoot a bullet
+    global selected_block
+
+    if key == "e":
         shoot()
 
+    if key == "m":
+        selected_block = "stone"
+        print("Selected block: Stone")
+
+    if key == "g":
+        selected_block = "grass"
+        print("Selected block: Grass")    
+
     for box in boxes:
-        if box.hovered:
-            if key == "left mouse down":
-                boxes.remove(box)
-                destroy(box)
+        if box.hovered:    
             if key == "right mouse down":
-                new_box = Button(
+                if selected_block == "stone":
+                 grass = Button(
                     color=color.white,
                     model="cube",
                     position=box.position + mouse.normal,
-                    texture="grass.png",
+                    texture=f"{selected_block}.jpg",
                     parent=scene,
                     origin_y=0.5
-                )
-                boxes.append(new_box)
+                 )
+                 boxes.append(grass)
+                elif selected_block == "grass":
+                    grass = Button(
+                    color=color.white,
+                    model="cube",
+                    position=box.position + mouse.normal,
+                    texture=f"{selected_block}.png",
+                    parent=scene,
+                    origin_y=0.5
+                 )
+                boxes.append(grass) 
 
-# Create enemies
-enemies = [Enemy(position=(3, 0, 3)), Enemy(position=(-4, 0, 8)), Enemy(position=(6, 0, -2))]
+            if key == "left mouse down":
+                boxes.remove(box)
+                destroy(box)
 
-def run_ursina():
-   app.run()
-
-async def main():   
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, run_ursina)  # Non-blocking Ursina app
-    print("Ursina is running — now continuing the rest of the script!")
-
-    # Example of background logic that runs while the game continues
-    while True:
-        await asyncio.sleep(1)  # Simulating a background task
-        print("This is running alongside Ursina")
+            #hey chatgpt make it so when i click m then i will select to place stone when i click right mouse button and wehen i click g it makes me select grass    
+app.run()
